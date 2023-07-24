@@ -24,6 +24,7 @@ SELECT  SUM(tt.DATA_LENGTH) , SUM(tt.INDEX_LENGTH), CONCAT(  ROUND ((SUM(tt.INDE
 FROM INFORMATION_SCHEMA.TABLES tt
 WHERE  tt.TABLE_SCHEMA = 'sakila' ;
 ```
+![img](https://github.com/Dokukin1/index/blob/main/percent.png)
 
 ### Задание 2
 
@@ -36,10 +37,14 @@ where date(p.payment_date) = '2005-07-30' and p.payment_date = r.rental_date and
 - перечислите узкие места;
 - оптимизируйте запрос: внесите корректировки по использованию операторов, при необходимости добавьте индексы.
 
-  Операторы distinct, over (partition by c.customer_id, f.title), также исключить из выборки таблицу film 
-```sql
-select  concat(c.last_name, ' ', c.first_name) as name, sum(p.amount)
-from payment p, rental r, customer c, inventory i
-where date(p.payment_date) = '2005-07-30' and p.payment_date = r.rental_date and r.customer_id = c.customer_id and i.inventory_id = r.inventory_id
-group by name
+Ответ:
+Наиболее узким местом в предлагаемом запросе является то, что оконная функция обрабатывает излишние таблицы а именно inventory, rental и film. 
+Предлагается оптимизировать запрос следующим образом:
+```explain analyze
+select distinct concat(c.last_name, ' ', c.first_name), sum(p.amount) over (partition by c.customer_id)
+from payment p, customer c
+where date(p.payment_date) = '2005-07-30' and p.customer_id = c.customer_id 
 ```
+Сравним:
+actual time исходного запроса на моей системе составляет 9018.977
+actual time оптимизированного запроса составляет 11,796.
